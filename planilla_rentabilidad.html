@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Rentabilidad - Estudio Contable</title>
+<style>
+  :root{
+    --bg:#f3f1eb; --card:#fdfcfa; --text:#232220; --muted:#7a7469;
+    --border:#dedad0; --accent:#1f5f4f; --accent-soft:#e4eee9;
+    --pos:#1f7a52; --neg:#a03e2c;
+    --head:#ece8de;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#17181a; --card:#1f2123; --text:#eae7e0; --muted:#8f9490;
+      --border:#33363a; --accent:#5fb89a; --accent-soft:#213330;
+      --pos:#5fb89a; --neg:#e08065;
+      --head:#26292c;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#17181a; --card:#1f2123; --text:#eae7e0; --muted:#8f9490;
+    --border:#33363a; --accent:#5fb89a; --accent-soft:#213330;
+    --pos:#5fb89a; --neg:#e08065;
+    --head:#26292c;
+  }
+  :root[data-theme="light"]{
+    --bg:#f3f1eb; --card:#fdfcfa; --text:#232220; --muted:#7a7469;
+    --border:#dedad0; --accent:#1f5f4f; --accent-soft:#e4eee9;
+    --pos:#1f7a52; --neg:#a03e2c;
+    --head:#ece8de;
+  }
+  *{box-sizing:border-box;}
+  body{
+    font-family:'Source Serif 4',Georgia,'Times New Roman',serif;
+    background:var(--bg); color:var(--text); margin:0; padding:32px 28px 40px;
+  }
+  h1{
+    font-family:'Source Serif 4',Georgia,serif; font-size:26px; font-weight:600;
+    margin:0 0 4px; letter-spacing:-.01em; text-wrap:balance;
+  }
+  p.sub{color:var(--muted); margin:0 0 22px; font-size:13.5px; max-width:60ch; font-family:'Inter',-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
+  .card{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:22px; overflow-x:auto;}
+  table{
+    border-collapse:collapse; width:100%; min-width:900px; font-size:13px;
+    font-family:'Inter',-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    font-variant-numeric:tabular-nums;
+  }
+  th,td{border:1px solid var(--border); padding:7px 9px; text-align:right;}
+  th:first-child, td:first-child{
+    text-align:left; position:sticky; left:0; background:var(--card);
+    font-weight:600; font-family:'Source Serif 4',Georgia,serif;
+  }
+  thead th{background:var(--head); text-align:center; font-weight:600; letter-spacing:.02em;}
+  thead th:first-child{text-align:left;}
+  td[contenteditable="true"]{cursor:text; transition:background .1s;}
+  td[contenteditable="true"]:hover{background:var(--accent-soft);}
+  td[contenteditable="true"]:focus{outline:2px solid var(--accent); background:var(--accent-soft);}
+  tr.total td{font-weight:700; background:var(--head);}
+  tr.margin td{color:var(--muted); font-style:italic;}
+  .pos{color:var(--pos);}
+  .neg{color:var(--neg);}
+  .section-label{
+    font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted);
+    padding:10px 0 4px !important; border:none !important; background:transparent !important;
+    font-family:'Inter',sans-serif;
+  }
+  .toolbar{display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; font-family:'Inter',sans-serif;}
+  button{
+    background:var(--accent); color:#fff; border:none; border-radius:7px;
+    padding:8px 14px; font-size:13px; cursor:pointer; font-family:'Inter',sans-serif;
+  }
+  button.secondary{background:transparent; color:var(--text); border:1px solid var(--border);}
+  button:hover{opacity:.88;}
+  button:focus-visible, td[contenteditable="true"]:focus-visible{outline:2px solid var(--accent); outline-offset:1px;}
+  .kpis{display:flex; gap:14px; flex-wrap:wrap; margin-bottom:22px; font-family:'Inter',sans-serif;}
+  .kpi{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 20px; min-width:150px;}
+  .kpi .v{font-size:24px; font-weight:700; font-variant-numeric:tabular-nums;}
+  .kpi .l{font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-top:2px;}
+  footer{color:var(--muted); font-size:12px; margin-top:10px; font-family:'Inter',sans-serif;}
+  .row-actions{display:flex; gap:4px;}
+  .del{background:transparent; color:var(--neg); border:none; cursor:pointer; font-size:14px; padding:2px 6px; font-family:'Inter',sans-serif;}
+</style>
+</head>
+<body>
+
+<h1>Rentabilidad — Estudio Contable</h1>
+<p class="sub">Editá cualquier celda numérica haciendo click sobre ella. Los totales y márgenes se calculan solos. Los datos se guardan automáticamente en este navegador.</p>
+
+<div class="kpis" id="kpis"></div>
+
+<div class="toolbar">
+  <button onclick="addCostRow()">+ Fila de Costo</button>
+  <button onclick="addGastoRow()">+ Fila de Gasto</button>
+  <button class="secondary" onclick="exportCSV()">Exportar CSV</button>
+  <button class="secondary" onclick="if(confirm('¿Restablecer todos los valores a cero?'))resetData()">Restablecer</button>
+</div>
+
+<div class="card">
+  <table id="tabla">
+    <thead>
+      <tr id="headRow"><th>Concepto</th></tr>
+    </thead>
+    <tbody id="body"></tbody>
+  </table>
+</div>
+
+<footer>Los valores se guardan en el almacenamiento local del navegador (localStorage), solo en este equipo. Usá "Exportar CSV" para respaldar o llevar a Excel.</footer>
+
+<script>
+const MESES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+const STORAGE_KEY = "rentabilidad_estudio_v1";
+
+function defaultData(){
+  return {
+    facturacion: Array(12).fill(0),
+    costos: [
+      {label:"Sueldos y cargas sociales", values: Array(12).fill(0)},
+      {label:"Honorarios profesionales", values: Array(12).fill(0)},
+    ],
+    gastos: [
+      {label:"Alquiler", values: Array(12).fill(0)},
+      {label:"Servicios (luz, internet, etc.)", values: Array(12).fill(0)},
+      {label:"Software / licencias", values: Array(12).fill(0)},
+    ]
+  };
+}
+
+let data = load();
+
+function load(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return defaultData();
+}
+function save(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+function resetData(){
+  data = defaultData();
+  save();
+  render();
+}
+
+function fmt(n){
+  n = Number(n)||0;
+  return n.toLocaleString('es-AR', {minimumFractionDigits:0, maximumFractionDigits:0});
+}
+
+function parseNum(str){
+  if(str==null) return 0;
+  const cleaned = String(str).replace(/[^\d,.-]/g,'').replace(/\.(?=\d{3}(\D|$))/g,'').replace(',', '.');
+  const n = parseFloat(cleaned);
+  return isNaN(n) ? 0 : n;
+}
+
+function addCostRow(){
+  const label = prompt("Nombre del costo:");
+  if(!label) return;
+  data.costos.push({label, values: Array(12).fill(0)});
+  save(); render();
+}
+function addGastoRow(){
+  const label = prompt("Nombre del gasto:");
+  if(!label) return;
+  data.gastos.push({label, values: Array(12).fill(0)});
+  save(); render();
+}
+function delRow(group, idx){
+  data[group].splice(idx,1);
+  save(); render();
+}
+
+function sumMonth(rows, m){
+  return rows.reduce((a,r)=>a + (Number(r.values[m])||0), 0);
+}
+function sumRowTotal(values){
+  return values.reduce((a,v)=>a+(Number(v)||0),0);
+}
+
+function render(){
+  const headRow = document.getElementById('headRow');
+  headRow.innerHTML = '<th>Concepto</th>' + MESES.map(m=>`<th>${m}</th>`).join('') + '<th>Total</th>';
+
+  const body = document.getElementById('body');
+  let html = '';
+
+  // Facturación
+  html += `<tr class="total"><td>Facturación</td>` +
+    MESES.map((_,m)=>`<td contenteditable="true" data-group="fact" data-m="${m}">${fmt(data.facturacion[m])}</td>`).join('') +
+    `<td>${fmt(sumRowTotal(data.facturacion))}</td></tr>`;
+
+  // Costos
+  html += `<tr><td class="section-label" colspan="${MESES.length+2}">Costos</td></tr>`;
+  data.costos.forEach((row, idx)=>{
+    html += `<tr><td>${row.label} <span class="row-actions"><button class="del" onclick="delRow('costos',${idx})" title="Eliminar">✕</button></span></td>` +
+      MESES.map((_,m)=>`<td contenteditable="true" data-group="costos" data-idx="${idx}" data-m="${m}">${fmt(row.values[m])}</td>`).join('') +
+      `<td>${fmt(sumRowTotal(row.values))}</td></tr>`;
+  });
+  html += `<tr class="total"><td>Total Costos</td>` +
+    MESES.map((_,m)=>`<td>${fmt(sumMonth(data.costos,m))}</td>`).join('') +
+    `<td>${fmt(MESES.reduce((a,_,m)=>a+sumMonth(data.costos,m),0))}</td></tr>`;
+
+  // Gastos
+  html += `<tr><td class="section-label" colspan="${MESES.length+2}">Gastos</td></tr>`;
+  data.gastos.forEach((row, idx)=>{
+    html += `<tr><td>${row.label} <span class="row-actions"><button class="del" onclick="delRow('gastos',${idx})" title="Eliminar">✕</button></span></td>` +
+      MESES.map((_,m)=>`<td contenteditable="true" data-group="gastos" data-idx="${idx}" data-m="${m}">${fmt(row.values[m])}</td>`).join('') +
+      `<td>${fmt(sumRowTotal(row.values))}</td></tr>`;
+  });
+  html += `<tr class="total"><td>Total Gastos</td>` +
+    MESES.map((_,m)=>`<td>${fmt(sumMonth(data.gastos,m))}</td>`).join('') +
+    `<td>${fmt(MESES.reduce((a,_,m)=>a+sumMonth(data.gastos,m),0))}</td></tr>`;
+
+  // Utilidad
+  const utilidad = MESES.map((_,m)=> data.facturacion[m] - sumMonth(data.costos,m) - sumMonth(data.gastos,m));
+  html += `<tr class="total"><td>Utilidad</td>` +
+    utilidad.map(v=>`<td class="${v>=0?'pos':'neg'}">${fmt(v)}</td>`).join('') +
+    `<td class="${sumRowTotal(utilidad)>=0?'pos':'neg'}">${fmt(sumRowTotal(utilidad))}</td></tr>`;
+
+  // Margen %
+  const margen = MESES.map((_,m)=> data.facturacion[m]>0 ? (utilidad[m]/data.facturacion[m]*100) : 0);
+  html += `<tr class="margin"><td>Margen %</td>` +
+    margen.map(v=>`<td>${v.toFixed(1)}%</td>`).join('') +
+    `<td>${(data.facturacion.reduce((a,b)=>a+b,0)>0 ? (sumRowTotal(utilidad)/data.facturacion.reduce((a,b)=>a+b,0)*100) : 0).toFixed(1)}%</td></tr>`;
+
+  body.innerHTML = html;
+
+  // attach edit listeners
+  body.querySelectorAll('td[contenteditable="true"]').forEach(td=>{
+    td.addEventListener('blur', onEdit);
+    td.addEventListener('keydown', e=>{
+      if(e.key==='Enter'){ e.preventDefault(); td.blur(); }
+    });
+  });
+
+  renderKPIs(utilidad, margen);
+}
+
+function onEdit(e){
+  const td = e.target;
+  const group = td.dataset.group;
+  const m = Number(td.dataset.m);
+  const val = parseNum(td.textContent);
+  if(group === 'fact'){
+    data.facturacion[m] = val;
+  } else {
+    const idx = Number(td.dataset.idx);
+    data[group][idx].values[m] = val;
+  }
+  save();
+  render();
+}
+
+function renderKPIs(utilidad, margen){
+  const totalFact = data.facturacion.reduce((a,b)=>a+b,0);
+  const totalUtil = sumRowTotal(utilidad);
+  const margenTotal = totalFact>0 ? (totalUtil/totalFact*100) : 0;
+  const kpis = document.getElementById('kpis');
+  kpis.innerHTML = `
+    <div class="kpi"><div class="v">${fmt(totalFact)}</div><div class="l">Facturación anual</div></div>
+    <div class="kpi"><div class="v ${totalUtil>=0?'pos':'neg'}">${fmt(totalUtil)}</div><div class="l">Utilidad anual</div></div>
+    <div class="kpi"><div class="v">${margenTotal.toFixed(1)}%</div><div class="l">Margen anual</div></div>
+  `;
+}
+
+function exportCSV(){
+  let rows = [["Concepto", ...MESES, "Total"]];
+  rows.push(["Facturación", ...data.facturacion.map(fmt), fmt(sumRowTotal(data.facturacion))]);
+  data.costos.forEach(r=>rows.push([r.label, ...r.values.map(fmt), fmt(sumRowTotal(r.values))]));
+  data.gastos.forEach(r=>rows.push([r.label, ...r.values.map(fmt), fmt(sumRowTotal(r.values))]));
+  const csv = rows.map(r=>r.map(c=>`"${c}"`).join(",")).join("\n");
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'rentabilidad.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+render();
+</script>
+</body>
+</html>
